@@ -184,18 +184,27 @@ export const handler = async (event) => {
 
     console.log(`[Handler] filter=${filter} keywords=${keywords.length}`);
 
+    const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
     const reedPromises = keywords.map((kw) =>
       fetchReed(kw, filter === "graduate" ? { graduate: "true" } : {})
     );
-    const adzunaPromises = keywords.slice(0, 4).map((kw) => fetchAdzuna(kw));
+
+    // Run Adzuna sequentially with 300ms gaps to avoid 429 rate limiting
+    const adzunaKeywords = keywords.slice(0, 4);
+    const adzunaResults = [];
+    for (const kw of adzunaKeywords) {
+      adzunaResults.push(await fetchAdzuna(kw));
+      await delay(300);
+    }
+
     const githubPromise =
       filter === "internship" || filter === "all"
         ? fetchGitHubInternships()
         : Promise.resolve([]);
 
-    const [reedResults, adzunaResults, githubJobs] = await Promise.all([
+    const [reedResults, githubJobs] = await Promise.all([
       Promise.all(reedPromises),
-      Promise.all(adzunaPromises),
       githubPromise,
     ]);
 
