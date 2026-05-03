@@ -28,7 +28,8 @@ async function fetchReed(keyword, extraParams = {}) {
       type: job.contractType || "Full Time",
       posted: job.date || null,
     }));
-  } catch {
+  } catch (err) {
+    console.log(`[Reed] Exception for "${keyword}": ${err.message}`);
     return [];
   }
 }
@@ -43,9 +44,17 @@ async function fetchAdzuna(keyword) {
       where: "UK",
       sort_by: "date",
     });
-    const res = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/1?${params}`);
-    if (!res.ok) return [];
+    const url = `https://api.adzuna.com/v1/api/jobs/gb/search/1?${params}`;
+    console.log(`[Adzuna] Fetching: "${keyword}"`);
+    const res = await fetch(url);
+    console.log(`[Adzuna] Status for "${keyword}": ${res.status}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.log(`[Adzuna] Error: ${errText}`);
+      return [];
+    }
     const data = await res.json();
+    console.log(`[Adzuna] Got ${data.results?.length || 0} jobs for "${keyword}" (${data.count} total)`);
     return (data.results || []).map((job) => ({
       id: `adzuna-${job.id}`,
       source: "Adzuna",
@@ -58,7 +67,8 @@ async function fetchAdzuna(keyword) {
       type: job.contract_time === "part_time" ? "Part Time" : "Full Time",
       posted: job.created || null,
     }));
-  } catch {
+  } catch (err) {
+    console.log(`[Adzuna] Exception for "${keyword}": ${err.message}`);
     return [];
   }
 }
@@ -68,9 +78,9 @@ async function fetchGitHubInternships() {
     const res = await fetch(
       "https://raw.githubusercontent.com/SimplifyJobs/Summer2025-Internships/dev/.github/scripts/listings.json"
     );
-    if (!res.ok) throw new Error("not ok");
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
     const data = await res.json();
-    return data
+    const filtered = data
       .filter((job) => {
         const isActive = job.active !== false;
         const isEng = /engineer|software|hardware|mechanical|civil|electrical|aerospace|systems|data/i
@@ -92,7 +102,10 @@ async function fetchGitHubInternships() {
         type: "Internship",
         posted: job.date_posted || null,
       }));
-  } catch {
+    console.log(`[GitHub] Got ${filtered.length} internships`);
+    return filtered;
+  } catch (err) {
+    console.log(`[GitHub] Exception: ${err.message}`);
     return [];
   }
 }
@@ -169,6 +182,8 @@ export const handler = async (event) => {
       keywords = KEYWORD_SETS[filter] || KEYWORD_SETS.all;
     }
 
+    console.log(`[Handler] filter=${filter} keywords=${keywords.length}`);
+
     const reedPromises = keywords.map((kw) =>
       fetchReed(kw, filter === "graduate" ? { graduate: "true" } : {})
     );
@@ -184,7 +199,12 @@ export const handler = async (event) => {
       githubPromise,
     ]);
 
-    const all = [...reedResults.flat(), ...adzunaResults.flat(), ...githubJobs];
+    const reedFlat = reedResults.flat();
+    const adzunaFlat = adzunaResults.flat();
+
+    console.log(`[Handler] Reed: ${reedFlat.length}, Adzuna: ${adzunaFlat.length}, GitHub: ${githubJobs.length}`);
+
+    const all = [...reedFlat, ...adzunaFlat, ...githubJobs];
     const unique = dedup(all);
     unique.sort((a, b) => new Date(b.posted || 0) - new Date(a.posted || 0));
 
@@ -195,13 +215,14 @@ export const handler = async (event) => {
         jobs: unique.slice(0, 100),
         count: unique.length,
         sources: {
-          reed: reedResults.flat().length,
-          adzuna: adzunaResults.flat().length,
+          reed: reedFlat.length,
+          adzuna: adzunaFlat.length,
           github: githubJobs.length,
         },
       }),
     };
   } catch (err) {
+    console.log(`[Handler] Fatal error: ${err.message}`);
     return {
       statusCode: 500,
       headers,
