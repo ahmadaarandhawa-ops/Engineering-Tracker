@@ -1,179 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
 
-const FILTERS = [
-  { id: "all", label: "All Roles" },
-  { id: "internship", label: "Internships" },
-  { id: "graduate", label: "Graduate" },
-  { id: "permanent", label: "Permanent" },
-];
+const FILTERS = ["All", "Internship", "Graduate", "Permanent", "Contract"];
+const DISCIPLINES = ["All", "Software", "Mechanical", "Civil", "Electrical", "Structural", "Chemical", "Aerospace"];
 
-const DISCIPLINES = [
-  "All",
-  "Software",
-  "Mechanical",
-  "Civil",
-  "Electrical",
-  "Structural",
-  "Chemical",
-  "Aerospace",
-];
-
-function timeAgo(dateStr) {
-  if (!dateStr) return "Recently";
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return `${Math.floor(days / 30)}mo ago`;
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "—";
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
 }
 
-function SourceBadge({ source }) {
-  const style = {
-    Reed: { bg: "#2a0808", color: "#ff6666", border: "#cc2222" },
-    Adzuna: { bg: "#08082a", color: "#6699ff", border: "#0044aa" },
-  }[source] || { bg: "#1a1a2a", color: "#aaa", border: "#333" };
-
+function SortArrow({ col, sortCol, sortDir }) {
   return (
-    <span style={{
-      fontSize: "10px",
-      fontFamily: "'Space Mono', monospace",
-      padding: "2px 7px",
-      borderRadius: "4px",
-      background: style.bg,
-      color: style.color,
-      border: `1px solid ${style.border}`,
-      letterSpacing: "0.05em",
-      textTransform: "uppercase",
-    }}>
-      {source}
+    <span style={{ marginLeft: 4, opacity: sortCol === col ? 1 : 0.3, fontSize: 10 }}>
+      {sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "▲"}
     </span>
-  );
-}
-
-function JobCard({ job, index }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div
-      style={{
-        background: "var(--bg2)",
-        border: "1px solid var(--border)",
-        borderRadius: "12px",
-        padding: "20px 24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-        cursor: "pointer",
-        transition: "border-color 0.2s, transform 0.2s",
-        animation: `fadeUp 0.4s ease both`,
-        animationDelay: `${Math.min(index * 40, 400)}ms`,
-        position: "relative",
-        overflow: "hidden",
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = "var(--accent)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = "var(--border)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
-      onClick={() => setExpanded(!expanded)}
-    >
-      {/* Subtle left accent bar */}
-      <div style={{
-        position: "absolute", left: 0, top: 0, bottom: 0, width: "3px",
-        background: "var(--accent)", borderRadius: "3px 0 0 3px", opacity: 0.6,
-      }} />
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
-            <SourceBadge source={job.source} />
-            {job.type && (
-              <span style={{
-                fontSize: "10px", fontFamily: "'Space Mono', monospace",
-                padding: "2px 7px", borderRadius: "4px",
-                background: "var(--bg3)", color: "var(--muted)",
-                border: "1px solid var(--border)", textTransform: "uppercase",
-              }}>
-                {job.type}
-              </span>
-            )}
-            <span style={{ fontSize: "11px", color: "var(--muted)", marginLeft: "auto" }}>
-              {timeAgo(job.posted)}
-            </span>
-          </div>
-          <h3 style={{
-            fontSize: "16px", fontWeight: 600, color: "var(--text)",
-            lineHeight: 1.3, marginBottom: "4px",
-          }}>
-            {job.title}
-          </h3>
-          <p style={{ fontSize: "13px", color: "var(--muted)" }}>
-            {job.company} · {job.location}
-          </p>
-        </div>
-        {job.salary && (
-          <div style={{
-            fontFamily: "'Space Mono', monospace",
-            fontSize: "13px", color: "var(--accent)",
-            whiteSpace: "nowrap", flexShrink: 0,
-          }}>
-            {job.salary}
-          </div>
-        )}
-      </div>
-
-      {expanded && (
-        <div style={{
-          fontSize: "13px", color: "var(--muted)", lineHeight: 1.7,
-          borderTop: "1px solid var(--border)", paddingTop: "12px",
-        }}>
-          <p style={{ marginBottom: "12px" }}>{job.description}</p>
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: "6px",
-              background: "var(--accent)", color: "#0a0a0f",
-              padding: "8px 16px", borderRadius: "8px",
-              fontWeight: 600, fontSize: "13px", textDecoration: "none",
-              transition: "opacity 0.2s",
-            }}
-            onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-          >
-            Apply Now →
-          </a>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Skeleton() {
-  return (
-    <div style={{
-      background: "var(--bg2)", border: "1px solid var(--border)",
-      borderRadius: "12px", padding: "20px 24px",
-    }}>
-      {[80, 60, 40].map((w, i) => (
-        <div key={i} style={{
-          height: i === 0 ? 16 : 12,
-          width: `${w}%`,
-          background: "var(--bg3)",
-          borderRadius: "4px",
-          marginBottom: i < 2 ? "10px" : 0,
-          animation: "pulse 1.5s ease infinite",
-          animationDelay: `${i * 200}ms`,
-        }} />
-      ))}
-    </div>
   );
 }
 
@@ -181,21 +22,25 @@ export default function App() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("All");
   const [discipline, setDiscipline] = useState("All");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [count, setCount] = useState(0);
   const [lastFetched, setLastFetched] = useState(null);
+  const [sortCol, setSortCol] = useState("posted");
+  const [sortDir, setSortDir] = useState("desc");
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ filter });
+      const apiFilter = filter === "Internship" ? "internship"
+        : filter === "Graduate" ? "graduate"
+        : "all";
+      const params = new URLSearchParams({ filter: apiFilter });
       if (search) params.set("search", search);
-      if (discipline !== "All") params.set("search", discipline);
-
+      if (discipline !== "All") params.set("search", discipline + " engineer");
       const res = await fetch(`/.netlify/functions/jobs?${params}`);
       if (!res.ok) throw new Error("API error");
       const data = await res.json();
@@ -203,7 +48,7 @@ export default function App() {
       setCount(data.count || 0);
       setLastFetched(new Date());
     } catch (err) {
-      setError("Couldn't load jobs right now. Please try again.");
+      setError("Couldn't load jobs. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -216,213 +61,224 @@ export default function App() {
     setSearch(searchInput);
   };
 
+  const handleSort = (col) => {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const sorted = [...jobs].sort((a, b) => {
+    let va = a[sortCol] || "";
+    let vb = b[sortCol] || "";
+    if (sortCol === "posted") { va = new Date(va || 0); vb = new Date(vb || 0); }
+    if (va < vb) return sortDir === "asc" ? -1 : 1;
+    if (va > vb) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const cols = [
+    { key: "source", label: "Source" },
+    { key: "company", label: "Company" },
+    { key: "title", label: "Programme / Role" },
+    { key: "location", label: "Location" },
+    { key: "type", label: "Type" },
+    { key: "salary", label: "Salary" },
+    { key: "posted", label: "Posted" },
+  ];
+
   return (
-    <>
+    <div style={{ fontFamily: "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif", background: "#f5f5f2", minHeight: "100vh", color: "#111" }}>
       <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.8; }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        * { box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #f5f5f2; }
+        table { border-collapse: collapse; width: 100%; }
+        th { cursor: pointer; user-select: none; }
+        th:hover { background: #e6e6e2 !important; }
+        tbody tr:hover td { background: #efefeb !important; }
+        a { color: inherit; text-decoration: none; }
+        input, select, button { font-family: inherit; }
+        ::-webkit-scrollbar { height: 5px; width: 5px; }
+        ::-webkit-scrollbar-track { background: #eee; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        @keyframes shimmer { 0%,100% { opacity:.4 } 50% { opacity:.9 } }
       `}</style>
 
-      {/* Header */}
-      <header style={{
-        borderBottom: "1px solid var(--border)",
-        padding: "0 32px",
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(10,10,15,0.95)",
-        backdropFilter: "blur(12px)",
-      }}>
-        <div style={{
-          maxWidth: 1100, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          height: "64px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{
-              width: 32, height: 32, background: "var(--accent)",
-              borderRadius: "8px", display: "flex", alignItems: "center",
-              justifyContent: "center",
-            }}>
-              <span style={{ fontSize: "16px" }}>⚙️</span>
-            </div>
-            <span style={{
-              fontFamily: "'Space Mono', monospace",
-              fontWeight: 700, fontSize: "18px", letterSpacing: "-0.02em",
-            }}>
-              EngTrackr
-            </span>
-            <span style={{
-              fontSize: "11px", color: "var(--muted)",
-              fontFamily: "'Space Mono', monospace",
-            }}>
-              UK Engineering Jobs
-            </span>
+      {/* Nav */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #e2e2de", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 28px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 17, fontWeight: 500, letterSpacing: "-0.02em" }}>EngTrack</span>
+            <span style={{ color: "#bbb", fontSize: 13 }}>UK Engineering Jobs & Internships</span>
           </div>
-
-          {lastFetched && (
-            <span style={{ fontSize: "11px", color: "var(--muted)", fontFamily: "'Space Mono', monospace" }}>
-              Updated {lastFetched.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-              {" · "}
-              <button onClick={fetchJobs} style={{
-                background: "none", border: "none", color: "var(--accent2)",
-                cursor: "pointer", fontSize: "11px", fontFamily: "'Space Mono', monospace",
-              }}>
-                Refresh ↺
-              </button>
-            </span>
-          )}
-        </div>
-      </header>
-
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 32px" }}>
-        {/* Hero */}
-        <div style={{ marginBottom: "40px", animation: "fadeUp 0.5s ease both" }}>
-          <h1 style={{
-            fontFamily: "'Space Mono', monospace",
-            fontSize: "clamp(28px, 5vw, 48px)",
-            fontWeight: 700,
-            lineHeight: 1.1,
-            marginBottom: "12px",
-            letterSpacing: "-0.03em",
-          }}>
-            UK Engineering{" "}
-            <span style={{ color: "var(--accent)" }}>Jobs &</span>
-            <br />Internships Board
-          </h1>
-          <p style={{ color: "var(--muted)", fontSize: "15px", maxWidth: 500 }}>
-            Live roles from Reed & Adzuna — all disciplines, updated regularly.
-            {count > 0 && <strong style={{ color: "var(--text)" }}> {count} roles found.</strong>}
-          </p>
-        </div>
-
-        {/* Search */}
-        <form onSubmit={handleSearch} style={{
-          display: "flex", gap: "10px", marginBottom: "28px",
-          animation: "fadeUp 0.5s ease 0.1s both",
-        }}>
-          <input
-            value={searchInput}
-            onChange={e => setSearchInput(e.target.value)}
-            placeholder="Search roles, companies, locations..."
-            style={{
-              flex: 1, background: "var(--bg2)", border: "1px solid var(--border)",
-              borderRadius: "10px", padding: "12px 16px", color: "var(--text)",
-              fontSize: "14px", fontFamily: "'DM Sans', sans-serif",
-              outline: "none", transition: "border-color 0.2s",
-            }}
-            onFocus={e => e.target.style.borderColor = "var(--accent)"}
-            onBlur={e => e.target.style.borderColor = "var(--border)"}
-          />
-          <button type="submit" style={{
-            background: "var(--accent)", color: "#0a0a0f", border: "none",
-            borderRadius: "10px", padding: "12px 24px", cursor: "pointer",
-            fontWeight: 600, fontSize: "14px", fontFamily: "'DM Sans', sans-serif",
-            transition: "opacity 0.2s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-          >
-            Search
-          </button>
-        </form>
-
-        {/* Filters row */}
-        <div style={{
-          display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "32px",
-          animation: "fadeUp 0.5s ease 0.15s both",
-        }}>
-          {/* Type filters */}
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {FILTERS.map(f => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                style={{
-                  padding: "7px 14px", borderRadius: "8px", cursor: "pointer",
-                  fontSize: "13px", fontWeight: 500, transition: "all 0.2s",
-                  background: filter === f.id ? "var(--accent)" : "var(--bg2)",
-                  color: filter === f.id ? "#0a0a0f" : "var(--muted)",
-                  border: `1px solid ${filter === f.id ? "var(--accent)" : "var(--border)"}`,
-                }}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ width: "1px", background: "var(--border)", margin: "0 4px" }} />
-
-          {/* Discipline filters */}
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {DISCIPLINES.map(d => (
-              <button
-                key={d}
-                onClick={() => setDiscipline(d)}
-                style={{
-                  padding: "7px 14px", borderRadius: "8px", cursor: "pointer",
-                  fontSize: "13px", fontWeight: 500, transition: "all 0.2s",
-                  background: discipline === d ? "var(--accent2)" : "var(--bg2)",
-                  color: discipline === d ? "#0a0a0f" : "var(--muted)",
-                  border: `1px solid ${discipline === d ? "var(--accent2)" : "var(--border)"}`,
-                }}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Results */}
-        {error ? (
-          <div style={{
-            background: "var(--bg2)", border: "1px solid #aa3333",
-            borderRadius: "12px", padding: "32px", textAlign: "center", color: "#ff8888",
-          }}>
-            <p style={{ marginBottom: "12px" }}>{error}</p>
-            <button onClick={fetchJobs} style={{
-              background: "var(--accent)", color: "#0a0a0f", border: "none",
-              borderRadius: "8px", padding: "8px 20px", cursor: "pointer", fontWeight: 600,
-            }}>
-              Try Again
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {lastFetched && (
+              <span style={{ fontSize: 11, color: "#aaa", fontFamily: "'IBM Plex Mono', monospace" }}>
+                {count} roles · {lastFetched.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+            <button onClick={fetchJobs} style={{ border: "1px solid #e0e0dc", background: "#fff", borderRadius: 6, padding: "4px 11px", fontSize: 12, cursor: "pointer", color: "#666" }}>
+              ↺ Refresh
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #e2e2de", padding: "14px 28px" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em" }}>UK Engineering Tracker</h1>
+            <form onSubmit={handleSearch} style={{ display: "flex", gap: 6 }}>
+              <input
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                placeholder="Search roles, companies..."
+                style={{ border: "1px solid #ddd", borderRadius: 6, padding: "5px 11px", fontSize: 13, width: 210, outline: "none" }}
+              />
+              <button type="submit" style={{ background: "#111", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontSize: 13, cursor: "pointer" }}>Search</button>
+              {search && <button type="button" onClick={() => { setSearch(""); setSearchInput(""); }} style={{ background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "5px 10px", fontSize: 12, cursor: "pointer", color: "#888" }}>✕</button>}
+            </form>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <span style={{ fontSize: 10, color: "#aaa", letterSpacing: "0.06em", fontFamily: "'IBM Plex Mono', monospace", marginRight: 2 }}>TYPE</span>
+              {FILTERS.map(f => (
+                <button key={f} onClick={() => setFilter(f)} style={{
+                  padding: "3px 11px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                  border: filter === f ? "1.5px solid #111" : "1px solid #ddd",
+                  background: filter === f ? "#111" : "#fff",
+                  color: filter === f ? "#fff" : "#666",
+                  fontWeight: filter === f ? 500 : 400,
+                }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+            <div style={{ width: 1, background: "#e2e2de", alignSelf: "stretch" }} />
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <span style={{ fontSize: 10, color: "#aaa", letterSpacing: "0.06em", fontFamily: "'IBM Plex Mono', monospace", marginRight: 2 }}>DISCIPLINE</span>
+              {DISCIPLINES.map(d => (
+                <button key={d} onClick={() => setDiscipline(d)} style={{
+                  padding: "3px 11px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                  border: discipline === d ? "1.5px solid #2563eb" : "1px solid #ddd",
+                  background: discipline === d ? "#eff6ff" : "#fff",
+                  color: discipline === d ? "#2563eb" : "#666",
+                  fontWeight: discipline === d ? 500 : 400,
+                }}>
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "20px 28px" }}>
+        {error ? (
+          <div style={{ background: "#fff", border: "1px solid #fcc", borderRadius: 8, padding: 32, textAlign: "center", color: "#c00" }}>
+            <p style={{ marginBottom: 12 }}>{error}</p>
+            <button onClick={fetchJobs} style={{ background: "#111", color: "#fff", border: "none", borderRadius: 6, padding: "7px 18px", cursor: "pointer", fontSize: 13 }}>Try Again</button>
+          </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {loading
-              ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} />)
-              : jobs.length === 0
-                ? (
-                  <div style={{
-                    textAlign: "center", padding: "80px 32px",
-                    color: "var(--muted)", border: "1px dashed var(--border)", borderRadius: "12px",
-                  }}>
-                    <p style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</p>
-                    <p>No roles found for this filter. Try adjusting your search.</p>
-                  </div>
-                )
-                : jobs.map((job, i) => <JobCard key={job.id} job={job} index={i} />)
-            }
+          <div style={{ background: "#fff", border: "1px solid #e2e2de", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #e2e2de" }}>
+                    {cols.map(col => (
+                      <th key={col.key} onClick={() => handleSort(col.key)} style={{
+                        padding: "9px 14px", textAlign: "left", fontSize: 10.5,
+                        fontWeight: 600, color: "#888", letterSpacing: "0.05em",
+                        textTransform: "uppercase", background: "#f9f9f7",
+                        whiteSpace: "nowrap", borderRight: "1px solid #efefeb",
+                      }}>
+                        {col.label}<SortArrow col={col.key} sortCol={sortCol} sortDir={sortDir} />
+                      </th>
+                    ))}
+                    <th style={{ padding: "9px 14px", fontSize: 10.5, fontWeight: 600, color: "#888", letterSpacing: "0.05em", textTransform: "uppercase", background: "#f9f9f7" }}>
+                      Apply
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    Array.from({ length: 14 }).map((_, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #f5f5f2" }}>
+                        {Array.from({ length: 8 }).map((_, j) => (
+                          <td key={j} style={{ padding: "12px 14px" }}>
+                            <div style={{ height: 11, borderRadius: 3, background: "#f0f0ec", width: `${35 + (i * 7 + j * 13) % 50}%`, animation: `shimmer 1.4s ease ${i * 0.05}s infinite` }} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : sorted.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ padding: 52, textAlign: "center", color: "#aaa", fontSize: 14 }}>
+                        No roles found — try adjusting your filters.
+                      </td>
+                    </tr>
+                  ) : sorted.map((job) => (
+                    <tr key={job.id} style={{ borderBottom: "1px solid #f5f5f2" }}>
+                      <td style={{ padding: "9px 14px", borderRight: "1px solid #f5f5f2" }}>
+                        <span style={{
+                          fontSize: 10, fontFamily: "'IBM Plex Mono', monospace",
+                          padding: "2px 6px", borderRadius: 3,
+                          background: job.source === "Reed" ? "#fff0f0" : "#f0f5ff",
+                          color: job.source === "Reed" ? "#b91c1c" : "#1d4ed8",
+                          border: `1px solid ${job.source === "Reed" ? "#fecaca" : "#bfdbfe"}`,
+                        }}>
+                          {job.source}
+                        </span>
+                      </td>
+                      <td style={{ padding: "9px 14px", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", borderRight: "1px solid #f5f5f2" }}>
+                        {job.company}
+                      </td>
+                      <td style={{ padding: "9px 14px", fontSize: 13, borderRight: "1px solid #f5f5f2", maxWidth: 340 }}>
+                        <a href={job.url} target="_blank" rel="noopener noreferrer"
+                          style={{ color: "#1d4ed8", fontWeight: 500 }}
+                          onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+                          onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>
+                          {job.title}
+                        </a>
+                      </td>
+                      <td style={{ padding: "9px 14px", fontSize: 12.5, color: "#666", whiteSpace: "nowrap", borderRight: "1px solid #f5f5f2" }}>
+                        {job.location || "—"}
+                      </td>
+                      <td style={{ padding: "9px 14px", borderRight: "1px solid #f5f5f2" }}>
+                        <span style={{ fontSize: 11, padding: "2px 7px", borderRadius: 3, background: "#f2f2ef", color: "#666" }}>
+                          {job.type || "Full Time"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "9px 14px", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", color: "#444", whiteSpace: "nowrap", borderRight: "1px solid #f5f5f2" }}>
+                        {job.salary || "—"}
+                      </td>
+                      <td style={{ padding: "9px 14px", fontSize: 11.5, color: "#999", fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap", borderRight: "1px solid #f5f5f2" }}>
+                        {formatDate(job.posted)}
+                      </td>
+                      <td style={{ padding: "9px 14px" }}>
+                        <a href={job.url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: 12, padding: "4px 11px", borderRadius: 5, background: "#111", color: "#fff", display: "inline-block" }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
+                          onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                          Apply →
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!loading && sorted.length > 0 && (
+              <div style={{ padding: "10px 16px", borderTop: "1px solid #f0f0ec", fontSize: 11.5, color: "#aaa", display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace" }}>
+                <span>{sorted.length} roles shown · Reed & Adzuna</span>
+                <span>EngTrack · UK Only</span>
+              </div>
+            )}
           </div>
         )}
-      </main>
-
-      {/* Footer */}
-      <footer style={{
-        borderTop: "1px solid var(--border)", padding: "24px 32px",
-        textAlign: "center", color: "var(--muted)", fontSize: "12px",
-        fontFamily: "'Space Mono', monospace",
-      }}>
-        EngTrackr · Pulling live roles from Reed & Adzuna · UK Engineering Only
-      </footer>
-    </>
+      </div>
+    </div>
   );
 }
