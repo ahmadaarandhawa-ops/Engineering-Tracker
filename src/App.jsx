@@ -27,6 +27,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [count, setCount] = useState(0);
+  const [sources, setSources] = useState({});
   const [lastFetched, setLastFetched] = useState(null);
   const [sortCol, setSortCol] = useState("posted");
   const [sortDir, setSortDir] = useState("desc");
@@ -46,6 +47,7 @@ export default function App() {
       const data = await res.json();
       setJobs(data.jobs || []);
       setCount(data.count || 0);
+      setSources(data.sources || {});
       setLastFetched(new Date());
     } catch (err) {
       setError("Couldn't load jobs. Please try again.");
@@ -272,7 +274,7 @@ export default function App() {
             </div>
             {!loading && sorted.length > 0 && (
               <div style={{ padding: "10px 16px", borderTop: "1px solid #f0f0ec", fontSize: 11.5, color: "#aaa", display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace" }}>
-                <span>{sorted.length} roles shown · Reed & Adzuna</span>
+                <span>{sorted.length} roles shown · Reed: {sources.reed || 0} · Adzuna: {sources.adzuna || 0} · GitHub: {sources.github || 0}</span>
                 <span>EngTrack · UK Only</span>
               </div>
             )}

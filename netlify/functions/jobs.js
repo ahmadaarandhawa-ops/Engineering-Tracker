@@ -119,11 +119,16 @@ function formatSalary(min, max) {
 }
 
 function dedup(jobs) {
-  const seen = new Set();
+  const seenIds = new Set();
+  const seenTitleCompany = new Set();
   return jobs.filter((job) => {
-    const key = `${job.title?.toLowerCase().trim()}-${job.company?.toLowerCase().trim()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
+    // Always dedupe by exact id
+    if (seenIds.has(job.id)) return false;
+    seenIds.add(job.id);
+    // Also dedupe if same source has exact same title+company
+    const tcKey = `${job.source}-${job.title?.toLowerCase().trim()}-${job.company?.toLowerCase().trim()}`;
+    if (seenTitleCompany.has(tcKey)) return false;
+    seenTitleCompany.add(tcKey);
     return true;
   });
 }
@@ -221,7 +226,7 @@ export const handler = async (event) => {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        jobs: unique.slice(0, 100),
+        jobs: unique.slice(0, 200),
         count: unique.length,
         sources: {
           reed: reedFlat.length,
