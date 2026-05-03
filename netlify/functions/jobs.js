@@ -118,6 +118,29 @@ function formatSalary(min, max) {
   return null;
 }
 
+
+const UK_REGIONS = [
+  "london", "manchester", "birmingham", "leeds", "glasgow", "edinburgh",
+  "liverpool", "bristol", "sheffield", "newcastle", "nottingham", "cardiff",
+  "belfast", "leicester", "coventry", "bradford", "stoke", "wolverhampton",
+  "plymouth", "derby", "reading", "Southampton", "portsmouth", "oxford",
+  "cambridge", "york", "exeter", "norwich", "brighton", "hull",
+  "middlesbrough", "sunderland", "aberdeen", "dundee", "swansea",
+  "uk", "united kingdom", "england", "scotland", "wales", "northern ireland",
+  "west midlands", "east midlands", "yorkshire", "lancashire", "surrey",
+  "kent", "essex", "hertfordshire", "buckinghamshire", "oxfordshire",
+  "hampshire", "devon", "cornwall", "suffolk", "norfolk", "lincolnshire",
+  "nottinghamshire", "derbyshire", "cheshire", "merseyside", "tyne",
+  "remote", "hybrid", "nationwide", "national", "home based", "home-based",
+  "flexible", "various", "multiple", "across the uk", "throughout the uk",
+];
+
+function isUK(location) {
+  if (!location) return false;
+  const loc = location.toLowerCase();
+  return UK_REGIONS.some((r) => loc.includes(r));
+}
+
 function dedup(jobs) {
   const seenIds = new Set();
   const seenTitleCompany = new Set();
@@ -219,7 +242,8 @@ export const handler = async (event) => {
     console.log(`[Handler] Reed: ${reedFlat.length}, Adzuna: ${adzunaFlat.length}, GitHub: ${githubJobs.length}`);
 
     const all = [...reedFlat, ...adzunaFlat, ...githubJobs];
-    const unique = dedup(all);
+    const ukOnly = all.filter((job) => isUK(job.location));
+    const unique = dedup(ukOnly);
     unique.sort((a, b) => new Date(b.posted || 0) - new Date(a.posted || 0));
 
     return {
