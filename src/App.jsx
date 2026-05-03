@@ -225,9 +225,9 @@ export default function App() {
                         <span style={{
                           fontSize: 10, fontFamily: "'IBM Plex Mono', monospace",
                           padding: "2px 6px", borderRadius: 3,
-                          background: job.source === "Reed" ? "#fff0f0" : "#f0f5ff",
-                          color: job.source === "Reed" ? "#b91c1c" : "#1d4ed8",
-                          border: `1px solid ${job.source === "Reed" ? "#fecaca" : "#bfdbfe"}`,
+                          background: job.source === "Reed" ? "#fff0f0" : job.source === "GitHub" ? "#f0fff4" : "#f0f5ff",
+                          color: job.source === "Reed" ? "#b91c1c" : job.source === "GitHub" ? "#166534" : "#1d4ed8",
+                          border: `1px solid ${job.source === "Reed" ? "#fecaca" : job.source === "GitHub" ? "#bbf7d0" : "#bfdbfe"}`,
                         }}>
                           {job.source}
                         </span>
