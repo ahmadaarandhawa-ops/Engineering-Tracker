@@ -191,16 +191,16 @@ export const handler = async (event) => {
 
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    const reedPromises = keywords.map((kw) =>
+    const reedPromises = keywords.slice(0, 5).map((kw) =>
       fetchReed(kw, filter === "graduate" ? { graduate: "true" } : {})
     );
 
-    // Run Adzuna sequentially with 300ms gaps to avoid 429 rate limiting
-    const adzunaKeywords = keywords.slice(0, 4);
+    // Run Adzuna sequentially with 200ms gaps to avoid 429 rate limiting
+    const adzunaKeywords = keywords.slice(0, 3);
     const adzunaResults = [];
     for (const kw of adzunaKeywords) {
       adzunaResults.push(await fetchAdzuna(kw));
-      await delay(300);
+      await delay(200);
     }
 
     const githubPromise =
